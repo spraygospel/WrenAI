@@ -44,17 +44,6 @@ export default function ConnectDataSource(props: Props) {
       <Typography.Title level={1} className="mb-3">
         Connect the data source
       </Typography.Title>
-      <Typography.Text>
-        Vote for your favorite data sources on{' '}
-        <Link
-          href="https://github.com/Canner/WrenAI/discussions/327"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          GitHub
-        </Link>
-        .
-      </Typography.Text>
 
       <StyledForm form={form} layout="vertical" className="p-6 my-6">
         <Row align="middle" className="mb-6">

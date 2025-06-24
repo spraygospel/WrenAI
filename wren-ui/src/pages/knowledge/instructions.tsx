@@ -185,14 +185,6 @@ export default function ManageInstructions() {
             in generating SQL queries. These instructions help Wren AI
             understand your data model and business rules, improving query
             accuracy and reducing the need for manual refinements.{' '}
-            <Link
-              className="gray-8 underline"
-              href="https://docs.getwren.ai/oss/guide/knowledge/instructions"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Learn more.
-            </Link>
           </>
         }
       >

@@ -43,7 +43,7 @@ export default function MySQLProperties(props: Props) {
       {process.env.NEXT_PUBLIC_OTHER_SERVICE_USING_DOCKER === 'true' && (
         <Alert
           className="!mb-6"
-          message="If you are running WrenAI services in Docker, it is recommended to use the Docker host address (e.g., host.docker.internal) for the connection."
+          message="If you are running VisiAI services in Docker, it is recommended to use the Docker host address (e.g., host.docker.internal) for the connection."
           type="warning"
           showIcon
         />

@@ -42,17 +42,6 @@ export default function Starter(props) {
       <Typography.Title level={1} className="mb-3">
         Connect a data source
       </Typography.Title>
-      <Typography.Text>
-        Vote for your favorite data sources on{' '}
-        <Link
-          href="https://github.com/Canner/WrenAI/discussions/327"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          GitHub
-        </Link>
-        .
-      </Typography.Text>
       <Row className="mt-6" gutter={[16, 16]}>
         <DataSourceIterator
           data={dataSources}

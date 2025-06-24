@@ -41,7 +41,7 @@ const Toolbar = (props: { dataSource: string; onClick: () => void }) => {
     <div className="d-flex justify-space-between align-center px-1">
       <span className="d-flex align-center gx-2">
         <Logo size={16} />
-        Wren SQL
+        Visi SQL
       </span>
       <Button className="px-0" type="link" size="small" onClick={onClick}>
         <SelectOutlined />
@@ -211,16 +211,8 @@ export default function QuestionSQLPairModal(props: Props) {
                 type="secondary"
                 className="text-sm gray-7 text-left"
               >
-                The SQL statement used here follows <b>Wren SQL</b>, which is
-                based on ANSI SQL and optimized for Wren AI.{` `}
-                <Typography.Link
-                  type="secondary"
-                  href="https://docs.getwren.ai/oss/guide/home/wren_sql"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Learn more about the syntax.
-                </Typography.Link>
+                The SQL statement used here follows <b>Visi SQL</b>, which is
+                based on ANSI SQL and optimized for Visi AI.{` `}
               </Typography.Text>
             </div>
             <div>

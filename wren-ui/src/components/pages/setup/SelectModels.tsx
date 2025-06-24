@@ -51,13 +51,7 @@ export default function SelectModels(props: Props) {
         We will create data models based on selected tables to help AI better
         understand your data.
         <br />
-        <Link
-          href="https://docs.getwren.ai/oss/guide/modeling/overview"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn more
-        </Link>{' '}
+        {' '}
         about data models.
       </Text>
       <div className="my-6">

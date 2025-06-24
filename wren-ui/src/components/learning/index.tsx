@@ -134,30 +134,6 @@ const getData = (
           getDispatcher(LEARNING.DATA_MODELING_GUIDE),
         ),
     },
-    {
-      id: LEARNING.CREATING_MODEL,
-      title: 'Creating a model',
-      href: 'https://docs.getwren.ai/oss/guide/modeling/models',
-      onClick: () => saveRecord(LEARNING.CREATING_MODEL),
-    },
-    {
-      id: LEARNING.CREATING_VIEW,
-      title: 'Creating a view',
-      href: 'https://docs.getwren.ai/oss/guide/modeling/views',
-      onClick: () => saveRecord(LEARNING.CREATING_VIEW),
-    },
-    {
-      id: LEARNING.WORKING_RELATIONSHIP,
-      title: 'Working on relationship',
-      href: 'https://docs.getwren.ai/oss/guide/modeling/relationships',
-      onClick: () => saveRecord(LEARNING.WORKING_RELATIONSHIP),
-    },
-    {
-      id: LEARNING.CONNECT_OTHER_DATA_SOURCES,
-      title: 'Connect to other data sources',
-      href: 'https://docs.getwren.ai/oss/guide/connect/overview',
-      onClick: () => saveRecord(LEARNING.CONNECT_OTHER_DATA_SOURCES),
-    },
   ] as LearningConfig[];
 
   const home = [
@@ -169,18 +145,6 @@ const getData = (
           LEARNING.SWITCH_PROJECT_LANGUAGE,
           getDispatcher(LEARNING.SWITCH_PROJECT_LANGUAGE),
         ),
-    },
-    {
-      id: LEARNING.SHARE_RESULTS,
-      title: 'Export to Excel/Sheets',
-      href: 'https://docs.getwren.ai/oss/guide/integrations/excel-add-in',
-      onClick: () => saveRecord(LEARNING.SHARE_RESULTS),
-    },
-    {
-      id: LEARNING.VIEW_FULL_SQL,
-      title: 'View full SQL',
-      href: 'https://docs.getwren.ai/oss/guide/home/answer#view-sqlview-full-sql',
-      onClick: () => saveRecord(LEARNING.VIEW_FULL_SQL),
     },
   ];
 

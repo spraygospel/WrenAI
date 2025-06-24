@@ -149,14 +149,6 @@ export default function AddCalculatedFieldModal(props: Props) {
         <div className="d-flex justify-space-between align-center">
           <div className="text-sm ml-2">
             <LinkOutlined className="gray-6 mr-2" />
-            <Typography.Link
-              type="secondary"
-              href="https://docs.getwren.ai/oss/guide/modeling/models#update-primary-key"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              How to set primary key in a model.
-            </Typography.Link>
           </div>
           <div>
             <Button onClick={onClose}>Cancel</Button>

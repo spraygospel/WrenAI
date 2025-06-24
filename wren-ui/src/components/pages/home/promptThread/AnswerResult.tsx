@@ -41,17 +41,9 @@ const adjustmentType = {
 
 const knowledgeTooltip = (
   <>
-    Store this answer as a Question-SQL pair to help Wren AI improve SQL
+    Store this answer as a Question-SQL pair to help Visi AI improve SQL
     generation.
     <br />
-    <Typography.Link
-      className="gray-1 underline"
-      href="https://docs.getwren.ai/oss/guide/knowledge/question-sql-pairs#save-to-knowledge"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Learn more
-    </Typography.Link>
   </>
 );
 

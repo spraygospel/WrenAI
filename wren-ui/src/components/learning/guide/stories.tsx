@@ -101,13 +101,7 @@ const playDataModelingGuide = (
             organizing relationships, semantics, and calculations. This helps AI
             align with business logic, retrieve precise data, and generate
             meaningful insights.{' '}
-            <a
-              href="https://docs.getwren.ai/oss/guide/modeling/overview"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              More details
-            </a>
+            
             <br />
             <br />
             {isSampleDataset ? (

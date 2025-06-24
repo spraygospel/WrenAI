@@ -168,14 +168,6 @@ export default function APIHistory() {
             <div>
               Here you can view the full history of API calls, including request
               inputs, responses, and execution details.{' '}
-              <Link
-                className="gray-8 underline mr-2"
-                href="https://docs.getwren.ai/oss/guide/api-access/history"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Learn more.
-              </Link>
             </div>
           </>
         }

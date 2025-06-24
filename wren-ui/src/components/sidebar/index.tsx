@@ -92,30 +92,7 @@ export default function Sidebar(props: Props) {
           <SettingOutlined className="text-md" />
           Settings
         </StyledButton>
-        <StyledButton type="text" block>
-          <Link
-            className="d-flex align-center"
-            href="https://discord.com/invite/5DvshJqG8Z"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-ph-capture="true"
-            data-ph-capture-attribute-name="cta_go_to_discord"
-          >
-            <DiscordIcon className="mr-2" style={{ width: 16 }} /> Discord
-          </Link>
-        </StyledButton>
-        <StyledButton type="text" block>
-          <Link
-            className="d-flex align-center"
-            href="https://github.com/Canner/WrenAI"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-ph-capture="true"
-            data-ph-capture-attribute-name="cta_go_to_github"
-          >
-            <GithubIcon className="mr-2" style={{ width: 16 }} /> GitHub
-          </Link>
-        </StyledButton>
+        <div style={{ height: 20 }} />
       </div>
     </Layout>
   );
