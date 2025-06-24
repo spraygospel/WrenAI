@@ -35,20 +35,20 @@ const StyledForm = styled(Form)`
 `;
 
 const Toolbar = (props: { dataSource: string; onClick: () => void }) => {
-  const { dataSource, onClick } = props;
-  const name = getDataSourceName(dataSource);
-  return (
-    <div className="d-flex justify-space-between align-center px-1">
-      <span className="d-flex align-center gx-2">
-        <Logo size={16} />
-        Visi SQL
-      </span>
-      <Button className="px-0" type="link" size="small" onClick={onClick}>
-        <SelectOutlined />
-        Import from {name} SQL
-      </Button>
-    </div>
-  );
+const { dataSource, onClick } = props;
+const name = getDataSourceName(dataSource);
+return (
+<div className="d-flex justify-space-between align-center px-1">
+<span className="d-flex align-center gx-2">
+<Logo />
+Visi SQL
+</span>
+<Button className="px-0" type="link" size="small" onClick={onClick}>
+<SelectOutlined />
+Import from {name} SQL
+</Button>
+</div>
+);
 };
 
 export default function QuestionSQLPairModal(props: Props) {

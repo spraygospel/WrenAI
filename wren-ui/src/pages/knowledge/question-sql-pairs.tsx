@@ -1,5 +1,5 @@
+// src/pages/knowledge/question-sql-pairs.tsx
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { Button, message, Table, TableColumnsType, Typography } from 'antd';
 import { format } from 'sql-formatter';
 import SiderLayout from '@/components/layouts/SiderLayout';

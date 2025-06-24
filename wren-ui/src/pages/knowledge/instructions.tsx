@@ -1,4 +1,4 @@
-import Link from 'next/link';
+// src/pages/knowledge/instructions.tsx
 import {
   Button,
   Tag,

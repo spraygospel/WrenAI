@@ -2,9 +2,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styled from 'styled-components';
 import { Path, MENU_KEY } from '@/utils/enum';
-import { OpenInNewIcon } from '@/utils/icons';
 import ApiOutlined from '@ant-design/icons/ApiOutlined';
-import ReadOutlined from '@ant-design/icons/ReadOutlined';
 import SidebarMenu from '@/components/sidebar/SidebarMenu';
 
 const Layout = styled.div`

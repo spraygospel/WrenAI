@@ -36,6 +36,9 @@ COPY .prettierrc ./
 COPY next.config.js ./
 COPY tsconfig.json ./
 
+# Fix line endings before building
+RUN yarn prettier --write .
+
 RUN yarn build
 
 # Production image, copy all the files and run next

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { ComponentProps, useState } from 'react';
 import { Typography, Row, Col } from 'antd';
 import { getDataSources, getTemplates } from './utils';

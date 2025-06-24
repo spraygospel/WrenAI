@@ -3,7 +3,6 @@ import { Alert, Form, Input, Switch } from 'antd';
 import { ERROR_TEXTS } from '@/utils/error';
 import { FORM_MODE } from '@/utils/enum';
 import { hostValidator } from '@/utils/validator';
-import env from '@/utils/env';
 
 interface Props {
   mode?: FORM_MODE;

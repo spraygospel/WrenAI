@@ -137,7 +137,7 @@ export default function ViewSQLTabContent(props: AnswerResultProps) {
               </>
             ) : (
               <span className="d-flex align-center gx-2">
-                <Logo size={18} />
+                <Logo  />
                 <Text className="gray-8 text-medium text-sm">Visi SQL</Text>
               </span>
             )}
