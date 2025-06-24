@@ -1,3 +1,4 @@
+# wren-ai-service/docker/Dockerfile
 # reference: https://medium.com/@albertazzir/blazing-fast-python-docker-builds-with-poetry-a78a66f5aed0
 FROM python:3.12.0-bookworm as builder
 
