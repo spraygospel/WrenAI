@@ -485,8 +485,15 @@ export class IbisAdaptor implements IIbisAdaptor {
       config.otherServiceUsingDocker &&
       Object.hasOwnProperty.call(connectionInfo, 'host')
     ) {
-      connectionInfo.host = toDockerHost(connectionInfo.host);
-      logger.debug(`Host replaced with docker host`);
+      if (['localhost', '127.0.0.1'].includes(connectionInfo.host)) {
+        connectionInfo.host = 'host.docker.internal';
+        logger.debug(
+          `Dev mode: Host is localhost, replaced with host.docker.internal for Ibis`,
+        );
+      } else {
+        connectionInfo.host = toDockerHost(connectionInfo.host);
+        logger.debug(`Host replaced with docker host`);
+      }
     }
     return connectionInfo;
   }

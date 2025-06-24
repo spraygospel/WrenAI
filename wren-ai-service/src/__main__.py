@@ -1,3 +1,5 @@
+# wren-ai-service/src/__main__.py
+import sys
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -88,6 +90,8 @@ def health():
 
 
 if __name__ == "__main__":
+    is_windows = sys.platform == "win32"
+
     uvicorn.run(
         "src.__main__:app",
         host=settings.host,
@@ -96,6 +100,6 @@ if __name__ == "__main__":
         reload_includes=["src/**/*.py", ".env.dev", "config.yaml"],
         reload_excludes=["tests/**/*.py", "eval/**/*.py"],
         workers=1,
-        loop="uvloop",
-        http="httptools",
+        loop="asyncio" if is_windows else "uvloop",
+        http="auto" if is_windows else "httptools",
     )

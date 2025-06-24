@@ -1,7 +1,9 @@
-import { Form, Input, Switch } from 'antd';
+// wren-ui/src/components/pages/setup/dataSources/MySQLProperties.tsx
+import { Alert, Form, Input, Switch } from 'antd';
 import { ERROR_TEXTS } from '@/utils/error';
 import { FORM_MODE } from '@/utils/enum';
 import { hostValidator } from '@/utils/validator';
+import env from '@/utils/env';
 
 interface Props {
   mode?: FORM_MODE;
@@ -38,6 +40,14 @@ export default function MySQLProperties(props: Props) {
       >
         <Input placeholder="10.1.1.1" disabled={isEditMode} />
       </Form.Item>
+      {process.env.NEXT_PUBLIC_OTHER_SERVICE_USING_DOCKER === 'true' && (
+        <Alert
+          className="!mb-6"
+          message="If you are running WrenAI services in Docker, it is recommended to use the Docker host address (e.g., host.docker.internal) for the connection."
+          type="warning"
+          showIcon
+        />
+      )}
       <Form.Item
         label="Port"
         name="port"
