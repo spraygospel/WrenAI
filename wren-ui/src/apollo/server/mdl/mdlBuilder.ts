@@ -514,6 +514,8 @@ export class MDLBuilder implements IMDLBuilder {
         return WrenEngineDataSourceType.SNOWFLAKE;
       case DataSourceName.REDSHIFT:
         return WrenEngineDataSourceType.REDSHIFT;
+      case DataSourceName.SIMCORE:
+        return WrenEngineDataSourceType.MYSQL;
       default:
         throw new Error(
           `Unsupported data source type: ${type} found when building manifest`,

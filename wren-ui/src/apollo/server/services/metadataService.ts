@@ -5,6 +5,7 @@
  */
 
 import { IIbisAdaptor } from '../adaptors/ibisAdaptor';
+import { IAdaptorFactory } from '@/common'; 
 import { IWrenEngineAdaptor } from '../adaptors/wrenEngineAdaptor';
 import { Project } from '../repositories';
 import { DataSourceName } from '../types';
@@ -52,17 +53,17 @@ export interface IDataSourceMetadataService {
 }
 
 export class DataSourceMetadataService implements IDataSourceMetadataService {
-  private readonly ibisAdaptor: IIbisAdaptor;
+  private readonly adaptorFactory: IAdaptorFactory; 
   private readonly wrenEngineAdaptor: IWrenEngineAdaptor;
 
   constructor({
-    ibisAdaptor,
+    adaptorFactory, // <<< UBAH
     wrenEngineAdaptor,
   }: {
-    ibisAdaptor: IIbisAdaptor;
+    adaptorFactory: IAdaptorFactory; // <<< UBAH
     wrenEngineAdaptor: IWrenEngineAdaptor;
   }) {
-    this.ibisAdaptor = ibisAdaptor;
+    this.adaptorFactory = adaptorFactory; // <<< UBAH
     this.wrenEngineAdaptor = wrenEngineAdaptor;
   }
 
@@ -72,21 +73,28 @@ export class DataSourceMetadataService implements IDataSourceMetadataService {
       const tables = await this.wrenEngineAdaptor.listTables();
       return tables;
     }
-    return await this.ibisAdaptor.getTables(dataSource, connectionInfo);
+    // --- UBAH LOGIKA DI SINI ---
+    const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+    return await adaptor.getTables(dataSource, connectionInfo);
+    // ---------------------------
   }
 
-  public async listConstraints(
-    project: Project,
-  ): Promise<RecommendConstraint[]> {
+  public async listConstraints(project: Project): Promise<RecommendConstraint[]> {
     const { type: dataSource, connectionInfo } = project;
     if (dataSource === DataSourceName.DUCKDB) {
       return [];
     }
-    return await this.ibisAdaptor.getConstraints(dataSource, connectionInfo);
+    // --- UBAH LOGIKA DI SINI ---
+    const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+    return await adaptor.getConstraints(dataSource, connectionInfo);
+    // ---------------------------
   }
 
   public async getVersion(project: Project): Promise<string> {
     const { type: dataSource, connectionInfo } = project;
-    return await this.ibisAdaptor.getVersion(dataSource, connectionInfo);
+    // --- UBAH LOGIKA DI SINI ---
+    const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+    return await adaptor.getVersion(dataSource, connectionInfo);
+    // ---------------------------
   }
 }

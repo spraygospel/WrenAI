@@ -3334,6 +3334,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/axios-mock-adapter@npm:^1.10.4":
+  version: 1.10.4
+  resolution: "@types/axios-mock-adapter@npm:1.10.4"
+  dependencies:
+    axios-mock-adapter: "npm:*"
+  checksum: 10c0/f42dac9a9bfffbe498809f8204523d284f0b81a82e050b7d104ab89d668879af41a46ab117d27c3546f7b750934595e3578cc5494779923be5d9c828bf060417
+  languageName: node
+  linkType: hard
+
 "@types/babel__core@npm:^7.1.14":
   version: 7.20.5
   resolution: "@types/babel__core@npm:7.20.5"
@@ -4969,6 +4978,18 @@ __metadata:
   version: 4.7.0
   resolution: "axe-core@npm:4.7.0"
   checksum: 10c0/89ac5712b5932ac7d23398b4cb5ba081c394a086e343acc68ba49c83472706e18e0799804e8388c779dcdacc465377deb29f2714241d3fbb389cf3a6b275c9ba
+  languageName: node
+  linkType: hard
+
+"axios-mock-adapter@npm:*, axios-mock-adapter@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "axios-mock-adapter@npm:2.1.0"
+  dependencies:
+    fast-deep-equal: "npm:^3.1.3"
+    is-buffer: "npm:^2.0.5"
+  peerDependencies:
+    axios: ">= 0.17.0"
+  checksum: 10c0/37ebd88940245f4e027578734613417f024d06e2279edb1a188ccdf685a15ab4fdfbac7cfe681731722a1ba6c0a5ec15ef0145f79a53687181e4aacbe45e1730
   languageName: node
   linkType: hard
 
@@ -8689,6 +8710,13 @@ __metadata:
     call-bind: "npm:^1.0.2"
     has-tostringtag: "npm:^1.0.0"
   checksum: 10c0/6090587f8a8a8534c0f816da868bc94f32810f08807aa72fa7e79f7e11c466d281486ffe7a788178809c2aa71fe3e700b167fe80dd96dad68026bfff8ebf39f7
+  languageName: node
+  linkType: hard
+
+"is-buffer@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "is-buffer@npm:2.0.5"
+  checksum: 10c0/e603f6fced83cf94c53399cff3bda1a9f08e391b872b64a73793b0928be3e5f047f2bcece230edb7632eaea2acdbfcb56c23b33d8a20c820023b230f1485679a
   languageName: node
   linkType: hard
 
@@ -15854,6 +15882,7 @@ __metadata:
     "@next/bundle-analyzer": "npm:^15.3.0"
     "@playwright/test": "npm:^1.44.0"
     "@testing-library/react": "npm:14.0.0"
+    "@types/axios-mock-adapter": "npm:^1.10.4"
     "@types/jest": "npm:29.4.4"
     "@types/lodash": "npm:^4.14.202"
     "@types/micro-cors": "npm:^0.1.5"
@@ -15870,6 +15899,7 @@ __metadata:
     antd: "npm:4.20.4"
     apollo-server-micro: "npm:^3.10.2"
     axios: "npm:^1.8.4"
+    axios-mock-adapter: "npm:^2.1.0"
     bcryptjs: "npm:^2.4.3"
     better-sqlite3: "npm:^9.4.3"
     clsx: "npm:^2.1.1"

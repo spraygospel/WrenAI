@@ -1,6 +1,7 @@
 import { DataSourceName } from '@server/types';
 import { Manifest } from '@server/mdl/type';
 import { IWrenEngineAdaptor } from '../adaptors/wrenEngineAdaptor';
+import { IAdaptorFactory } from '@/common';
 import {
   SupportedDataSource,
   IIbisAdaptor,
@@ -77,20 +78,20 @@ export interface IQueryService {
 }
 
 export class QueryService implements IQueryService {
-  private readonly ibisAdaptor: IIbisAdaptor;
+  private readonly adaptorFactory: IAdaptorFactory;
   private readonly wrenEngineAdaptor: IWrenEngineAdaptor;
   private readonly telemetry: PostHogTelemetry;
 
   constructor({
-    ibisAdaptor,
+    adaptorFactory,
     wrenEngineAdaptor,
     telemetry,
   }: {
-    ibisAdaptor: IIbisAdaptor;
+    adaptorFactory: IAdaptorFactory; // <<< UBAH
     wrenEngineAdaptor: IWrenEngineAdaptor;
     telemetry: PostHogTelemetry;
   }) {
-    this.ibisAdaptor = ibisAdaptor;
+    this.adaptorFactory = adaptorFactory; // <<< UBAH
     this.wrenEngineAdaptor = wrenEngineAdaptor;
     this.telemetry = telemetry;
   }
@@ -108,13 +109,13 @@ export class QueryService implements IQueryService {
       cacheEnabled,
     } = options;
     const { type: dataSource, connectionInfo } = project;
-    if (this.useEngine(dataSource)) {
+
+    // --- LOGIKA BARU MENGGUNAKAN FACTORY ---
+    if (dataSource === DataSourceName.DUCKDB) {
+      // Logika khusus DuckDB tetap menggunakan wrenEngineAdaptor
       if (dryRun) {
         logger.debug('Using wren engine to dry run');
-        await this.wrenEngineAdaptor.dryRun(sql, {
-          manifest: mdl,
-          limit,
-        });
+        await this.wrenEngineAdaptor.dryRun(sql, { manifest: mdl, limit });
         return true;
       } else {
         logger.debug('Using wren engine to preview');
@@ -122,22 +123,38 @@ export class QueryService implements IQueryService {
         return data as PreviewDataResponse;
       }
     } else {
-      this.checkDataSourceIsSupported(dataSource);
-      logger.debug('Use ibis adaptor to preview');
+      // Untuk SEMUA data source lain (termasuk SIMCORE, MySQL, dll.)
+      logger.debug(`Using adaptor for ${dataSource} to preview`);
+      const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+
       if (dryRun) {
-        return await this.ibisDryRun(sql, dataSource, connectionInfo, mdl);
+        // Panggil dryRun dari adaptor yang sesuai
+        const res = await adaptor.dryRun(sql, { dataSource, connectionInfo, mdl });
+        this.sendIbisEvent(TelemetryEvent.IBIS_DRY_RUN, res, { dataSource, sql });
+        return { correlationId: res.correlationId };
       } else {
-        return await this.ibisQuery(
-          sql,
+        // Panggil query dari adaptor yang sesuai
+        const res = await adaptor.query(sql, {
           dataSource,
           connectionInfo,
           mdl,
           limit,
           refresh,
           cacheEnabled,
-        );
+        });
+        this.sendIbisEvent(TelemetryEvent.IBIS_QUERY, res, { dataSource, sql });
+        const data = this.transformDataType(res);
+        return {
+          correlationId: res.correlationId,
+          cacheHit: res.cacheHit,
+          cacheCreatedAt: res.cacheCreatedAt,
+          cacheOverrodeAt: res.cacheOverrodeAt,
+          override: res.override,
+          ...data,
+        };
       }
     }
+    // ------------------------------------------
   }
 
   public async describeStatement(
@@ -162,13 +179,16 @@ export class QueryService implements IQueryService {
     parameters: Record<string, any>,
   ): Promise<ValidateResponse> {
     const { type: dataSource, connectionInfo } = project;
-    const res = await this.ibisAdaptor.validate(
+    // --- UBAH LOGIKA DI SINI ---
+    const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+    const res = await adaptor.validate(
       dataSource,
       rule,
       connectionInfo,
       manifest,
       parameters,
     );
+    // ---------------------------
     return res;
   }
 
@@ -196,11 +216,14 @@ export class QueryService implements IQueryService {
   ): Promise<IbisResponse> {
     const event = TelemetryEvent.IBIS_DRY_RUN;
     try {
-      const res = await this.ibisAdaptor.dryRun(sql, {
+      // --- UBAH LOGIKA DI SINI ---
+      const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+      const res = await adaptor.dryRun(sql, {
         dataSource,
         connectionInfo,
         mdl,
       });
+      // ---------------------------
       this.sendIbisEvent(event, res, { dataSource, sql });
       return {
         correlationId: res.correlationId,
@@ -222,7 +245,9 @@ export class QueryService implements IQueryService {
   ): Promise<PreviewDataResponse> {
     const event = TelemetryEvent.IBIS_QUERY;
     try {
-      const res = await this.ibisAdaptor.query(sql, {
+      // --- UBAH LOGIKA DI SINI ---
+      const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+      const res = await adaptor.query(sql, {
         dataSource,
         connectionInfo,
         mdl,
@@ -230,6 +255,7 @@ export class QueryService implements IQueryService {
         refresh,
         cacheEnabled,
       });
+      // ---------------------------
       this.sendIbisEvent(event, res, { dataSource, sql });
       const data = this.transformDataType(res);
       return {

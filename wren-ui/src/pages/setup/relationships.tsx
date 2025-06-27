@@ -9,6 +9,7 @@ export default function SetupRelationships() {
     fetching,
     stepKey,
     recommendRelationsResult,
+    dataSourceType,
     onNext,
     onBack,
     onSkip,
@@ -23,6 +24,7 @@ export default function SetupRelationships() {
         <current.component
           fetching={fetching}
           {...recommendRelationsResult}
+          dataSourceType={dataSourceType}
           onNext={onNext}
           onBack={onBack}
           onSkip={onSkip}

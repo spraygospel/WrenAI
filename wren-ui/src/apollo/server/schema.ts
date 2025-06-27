@@ -56,6 +56,7 @@ export const typeDefs = gql`
     TRINO
     SNOWFLAKE
     REDSHIFT
+    SIMCORE
   }
 
   enum RedshiftConnectionType {
@@ -207,6 +208,7 @@ export const typeDefs = gql`
 
   input SaveTablesInput {
     tables: [String!]!
+    schemaJSON: String
   }
 
   type CompactColumn {

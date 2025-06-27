@@ -111,6 +111,11 @@ export interface REDSHIFT_IAM_AUTH {
   awsSecretKey: string;
   redshiftType: IbisRedshiftConnectionType;
 }
+export interface SIMCORE_CONNECTION_INFO {
+  apiUrl: string;
+  user: string;
+  password: string;
+}
 
 export type REDSHIFT_CONNECTION_INFO =
   | REDSHIFT_PASSWORD_AUTH
@@ -127,7 +132,8 @@ export type WREN_AI_CONNECTION_INFO =
   | CLICK_HOUSE_CONNECTION_INFO
   | TRINO_CONNECTION_INFO
   | SNOWFLAKE_CONNECTION_INFO
-  | REDSHIFT_CONNECTION_INFO;
+  | REDSHIFT_CONNECTION_INFO
+  | SIMCORE_CONNECTION_INFO;
 
 export interface RecommendationQuestionResult {
   question: string;

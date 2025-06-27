@@ -1,5 +1,6 @@
 import { SqlPair } from '@server/repositories';
 import { IWrenAIAdaptor } from '@server/adaptors/wrenAIAdaptor';
+import { IAdaptorFactory } from '@/common';
 import { ISqlPairRepository } from '@server/repositories/sqlPairRepository';
 import { getLogger } from '@server/utils';
 import { chunk } from 'lodash';
@@ -59,20 +60,20 @@ export interface ISqlPairService {
 export class SqlPairService implements ISqlPairService {
   private sqlPairRepository: ISqlPairRepository;
   private wrenAIAdaptor: IWrenAIAdaptor;
-  private ibisAdaptor: IIbisAdaptor;
+  private adaptorFactory: IAdaptorFactory; 
 
   constructor({
     sqlPairRepository,
     wrenAIAdaptor,
-    ibisAdaptor,
+    adaptorFactory, // <<< UBAH
   }: {
     sqlPairRepository: ISqlPairRepository;
     wrenAIAdaptor: IWrenAIAdaptor;
-    ibisAdaptor: IIbisAdaptor;
+    adaptorFactory: IAdaptorFactory; // <<< UBAH
   }) {
     this.sqlPairRepository = sqlPairRepository;
     this.wrenAIAdaptor = wrenAIAdaptor;
-    this.ibisAdaptor = ibisAdaptor;
+    this.adaptorFactory = adaptorFactory; // <<< UBAH
   }
 
   public async modelSubstitute(
@@ -91,7 +92,8 @@ export class SqlPairService implements ISqlPairService {
     const firstModel = mdl.models?.[0];
     const catalog = firstModel?.tableReference?.catalog;
     const schema = firstModel?.tableReference?.schema;
-    return await this.ibisAdaptor.modelSubstitute(sql, {
+    const adaptor = this.adaptorFactory(dataSource, connectionInfo);
+    return await adaptor.modelSubstitute(sql, {
       dataSource,
       connectionInfo,
       mdl,

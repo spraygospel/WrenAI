@@ -24,6 +24,8 @@ import {
   WrenEngineAdaptor,
   WrenAIAdaptor,
   IbisAdaptor,
+  SimcoreAdaptor,
+  IIbisAdaptor,
 } from '@server/adaptors';
 import {
   DataSourceMetadataService,
@@ -43,8 +45,13 @@ import {
   DashboardCacheBackgroundTracker,
 } from './apollo/server/backgrounds';
 import { SqlPairService } from './apollo/server/services/sqlPairService';
+import { DataSourceName } from './apollo/server/types'; 
 
 export const serverConfig = getConfig();
+
+export interface IAdaptorFactory {
+  (dataSourceType: DataSourceName, connectionInfo: any): IIbisAdaptor;
+}
 
 export const initComponents = () => {
   const telemetry = new PostHogTelemetry();
@@ -86,14 +93,25 @@ export const initComponents = () => {
   const ibisAdaptor = new IbisAdaptor({
     ibisServerEndpoint: serverConfig.ibisServerEndpoint,
   });
+  const adaptorFactory: IAdaptorFactory = (
+    dataSourceType: DataSourceName,
+    connectionInfo: any,
+  ): IIbisAdaptor => {
+    if (dataSourceType === DataSourceName.SIMCORE) {
+      // Instance dibuat saat dibutuhkan dengan connectionInfo yang tepat
+      return new SimcoreAdaptor(connectionInfo);
+    }
+    // Default untuk semua tipe data source lainnya
+    return ibisAdaptor;
+  };
 
   // services
   const metadataService = new DataSourceMetadataService({
-    ibisAdaptor,
+    adaptorFactory,
     wrenEngineAdaptor,
   });
   const queryService = new QueryService({
-    ibisAdaptor,
+    adaptorFactory,
     wrenEngineAdaptor,
     telemetry,
   });
@@ -144,7 +162,7 @@ export const initComponents = () => {
   const sqlPairService = new SqlPairService({
     sqlPairRepository,
     wrenAIAdaptor,
-    ibisAdaptor,
+    adaptorFactory,
   });
   const instructionService = new InstructionService({
     instructionRepository,

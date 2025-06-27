@@ -24,6 +24,7 @@ import {
   REDSHIFT_CONNECTION_INFO,
   REDSHIFT_IAM_AUTH,
   REDSHIFT_PASSWORD_AUTH,
+  SIMCORE_CONNECTION_INFO,
 } from './repositories';
 import { DataSourceName } from './types';
 import { getConfig } from './config';
@@ -395,6 +396,15 @@ const dataSource = {
     REDSHIFT_CONNECTION_INFO,
     IbisRedshiftConnectionInfo
   >,
+  [DataSourceName.SIMCORE]: {
+    sensitiveProps: ['password'],
+    toIbisConnectionInfo(_connectionInfo: SIMCORE_CONNECTION_INFO) {
+      // Metode ini tidak akan digunakan oleh adaptor SIMCORE,
+      // tetapi perlu ada untuk memenuhi struktur yang ada.
+      // Melempar error adalah tindakan defensif yang baik.
+      throw new Error('toIbisConnectionInfo is not applicable for SIMCORE.');
+    },
+  } as IDataSourceConnectionInfo<SIMCORE_CONNECTION_INFO, unknown>,
 };
 
 function decryptConnectionInfo(

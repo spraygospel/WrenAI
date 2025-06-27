@@ -194,6 +194,10 @@ export class ProjectService implements IProjectService {
       : projectId
         ? await this.getProjectById(projectId)
         : await this.getCurrentProject();
+    if (usedProject.type === DataSourceName.SIMCORE) {
+      logger.debug('SIMCORE data source detected, skipping table discovery via API.');
+      return [];
+    }
     return await this.metadataService.listTables(usedProject);
   }
 

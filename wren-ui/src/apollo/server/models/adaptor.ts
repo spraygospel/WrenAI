@@ -327,3 +327,9 @@ export interface AskFeedbackResult {
   traceId?: string;
   invalidSql?: string;
 }
+
+export interface SIMCORE_CONNECTION_INFO {
+  apiUrl: string;
+  user: string;
+  password: string;
+}

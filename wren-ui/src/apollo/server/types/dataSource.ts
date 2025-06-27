@@ -10,6 +10,7 @@ export enum DataSourceName {
   SNOWFLAKE = 'SNOWFLAKE',
   ATHENA = 'ATHENA',
   REDSHIFT = 'REDSHIFT',
+  SIMCORE = 'SIMCORE',
 }
 
 export interface DataSource {

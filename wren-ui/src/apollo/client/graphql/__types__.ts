@@ -322,6 +322,7 @@ export enum DataSourceName {
   ORACLE = 'ORACLE',
   POSTGRES = 'POSTGRES',
   REDSHIFT = 'REDSHIFT',
+  SIMCORE = 'SIMCORE',
   SNOWFLAKE = 'SNOWFLAKE',
   TRINO = 'TRINO'
 }
@@ -1301,6 +1302,7 @@ export type SaveRelationInput = {
 };
 
 export type SaveTablesInput = {
+  schemaJSON?: InputMaybe<Scalars['String']>;
   tables: Array<Scalars['String']>;
 };
 

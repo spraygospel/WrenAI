@@ -112,6 +112,11 @@ export const DATA_SOURCE_OPTIONS = {
     guide: 'https://docs.getwren.ai/oss/guide/connect/redshift',
     disabled: false,
   },
+  [DATA_SOURCES.SIMCORE]: {
+    ...getDataSourceConfig(DATA_SOURCES.SIMCORE),
+    guide: '#', // Kita tetap perlu guide dummy untuk menghindari error 'href'
+    disabled: false,
+  },
 } as { [key: string]: ButtonOption };
 
 export const TEMPLATE_OPTIONS = {

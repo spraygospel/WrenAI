@@ -24,6 +24,7 @@ import RelationModal, {
   RelationFormValues,
 } from '@/components/modals/RelationModal';
 import { convertFormValuesToIdentifier } from '@/hooks/useCombineFieldOptions';
+import { DataSourceName } from '@/apollo/client/graphql/__types__';
 
 const { Title, Text } = Typography;
 
@@ -42,6 +43,7 @@ interface Props {
   onBack: () => void;
   onSkip: () => void;
   submitting: boolean;
+  dataSourceType?: DataSourceName; 
 }
 
 interface EditableRelationTableProps {
@@ -157,6 +159,7 @@ export default function DefineRelations(props: Props) {
     fetching,
     recommendRelations,
     recommendNameMapping,
+    dataSourceType,
     onBack,
     onNext,
     onSkip,
@@ -176,7 +179,10 @@ export default function DefineRelations(props: Props) {
 
   useEffect(() => {
     setRelations(recommendRelations);
-
+    if (dataSourceType === DataSourceName.SIMCORE) {
+      setShowNoRecommendationAlert(false);
+      return;
+    }
     const recommendRelationsValues = Object.values(recommendRelations);
     if (recommendRelationsValues.length === 0) return;
 
@@ -184,7 +190,7 @@ export default function DefineRelations(props: Props) {
       (value) => value.length === 0,
     );
     setShowNoRecommendationAlert(allEmpty);
-  }, [recommendRelations]);
+  }, [recommendRelations, dataSourceType]);
 
   const relationModal = useModalAction();
 

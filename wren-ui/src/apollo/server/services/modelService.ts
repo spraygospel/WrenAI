@@ -1,3 +1,4 @@
+// src/apollo/server/services/modelService.ts
 import { SampleDatasetTable } from '@server/data';
 import {
   IModelColumnRepository,
@@ -13,8 +14,9 @@ import {
   safeParseJson,
   replaceAllowableSyntax,
   validateDisplayName,
+  handleNestedColumns, replaceInvalidReferenceName, transformInvalidColumnName
 } from '@server/utils';
-import { RelationData, UpdateRelationData } from '@server/types';
+import { RelationData, UpdateRelationData, RelationType } from '@server/types';
 import { IProjectService } from './projectService';
 import {
   CreateCalculatedFieldData,
@@ -61,6 +63,11 @@ export interface IModelService {
   ): Promise<ValidateCalculatedFieldResponse>;
   deleteAllViewsByProjectId(projectId: number): Promise<void>;
   deleteAllModelsByProjectId(projectId: number): Promise<void>;
+  createModelsFromSchemaJSON(
+    projectId: number,
+    schemaJSON: string,
+    selectedTableNames: string[],
+  ): Promise<{ models: Model[]; columns: ModelColumn[] }>;
 }
 
 export interface GenerateReferenceNameData {
@@ -344,28 +351,29 @@ export class ModelService implements IModelService {
     }
     const { id } = await this.projectService.getCurrentProject();
 
+    // Ambil semua relasi yang sudah ada di database untuk proyek ini
+    const existingRelations = await this.relationRepository.findAllBy({ projectId: id });
+
     const models = await this.modelRepository.findAllBy({
       projectId: id,
     });
-
     const columnIds = relations
       .map(({ fromColumnId, toColumnId }) => [fromColumnId, toColumnId])
       .flat();
     const columns =
       await this.modelColumnRepository.findColumnsByIds(columnIds);
-    const relationValues = relations.map((relation) => {
-      const fromColumn = columns.find(
-        (column) => column.id === relation.fromColumnId,
+      
+    // --- LOGIKA BARU UNTUK MENCEGAH DUPLIKAT ---
+    const newRelationValues = relations.filter(relation => {
+      // Periksa apakah relasi yang identik (berdasarkan kolom) sudah ada
+      const isExisting = existingRelations.some(existing => 
+        (existing.fromColumnId === relation.fromColumnId && existing.toColumnId === relation.toColumnId) ||
+        (existing.fromColumnId === relation.toColumnId && existing.toColumnId === relation.fromColumnId)
       );
-      if (!fromColumn) {
-        throw new Error(`Column not found, column Id ${relation.fromColumnId}`);
-      }
-      const toColumn = columns.find(
-        (column) => column.id === relation.toColumnId,
-      );
-      if (!toColumn) {
-        throw new Error(`Column not found, column Id  ${relation.toColumnId}`);
-      }
+      // Hanya proses relasi yang belum ada
+      return !isExisting;
+    }).map((relation) => {
+      // sisa logika pembuatan nama dan nilai sama seperti sebelumnya
       const relationName = this.generateRelationName(relation, models, columns);
       return {
         projectId: id,
@@ -379,8 +387,15 @@ export class ModelService implements IModelService {
       } as Partial<Relation>;
     });
 
+    // Jika tidak ada relasi baru yang perlu dibuat, langsung kembalikan array kosong
+    if (isEmpty(newRelationValues)) {
+        logger.debug("No new relations to save. Skipping database insertion.");
+        return [];
+    }
+    
     const savedRelations =
-      await this.relationRepository.createMany(relationValues);
+      await this.relationRepository.createMany(newRelationValues);
+    // ------------------------------------------------
 
     return savedRelations;
   }
@@ -502,7 +517,91 @@ export class ModelService implements IModelService {
     // delete all models
     await this.modelRepository.deleteAllBy({ projectId });
   }
+  public async createModelsFromSchemaJSON(
+    projectId: number,
+    schemaJSON: string,
+    selectedTableNames: string[],
+  ) {
+    logger.debug('Creating models from provided JSON schema...');
+    const schema = JSON.parse(schemaJSON);
+    const tablesToCreate = Object.entries(schema.tables).filter(
+      ([tableName]) => selectedTableNames.includes(tableName)
+    );
 
+    // Hapus model lama terlebih dahulu
+    await this.deleteAllModelsByProjectId(projectId);
+
+    // Buat Model
+    const modelValues = tablesToCreate.map(([tableName, tableData]: [string, any]) => ({
+      projectId,
+      displayName: tableName,
+      referenceName: replaceInvalidReferenceName(tableName),
+      sourceTableName: tableName,
+      cached: false,
+      refreshTime: null,
+      properties: null, // Properti bisa ditambahkan nanti jika ada
+    }));
+    
+    const models = await this.modelRepository.createMany(modelValues as Partial<Model>[]);
+    logger.debug(`${models.length} models created from JSON schema.`);
+
+    // Buat Kolom
+    const columnValues = models.flatMap((model) => {
+      const tableData = schema.tables[model.sourceTableName];
+      const primaryKey = tableData.columns.find(col => col.isPk)?.name;
+
+      return tableData.columns.map((col: any) => ({
+        modelId: model.id,
+        isCalculated: false,
+        displayName: col.name,
+        referenceName: transformInvalidColumnName(col.name),
+        sourceColumnName: col.name,
+        type: col.type,
+        notNull: col.notNull || false,
+        isPk: primaryKey === col.name,
+        properties: null,
+      }));
+    });
+
+    const columns = await this.modelColumnRepository.createMany(columnValues as Partial<ModelColumn>[]);
+    logger.debug(`${columns.length} columns created from JSON schema.`);
+
+    // Buat Relasi
+    const relationships = schema.relationships || [];
+    const relationValues = relationships
+      .filter(rel => 
+        selectedTableNames.includes(rel.fromTable) && 
+        selectedTableNames.includes(rel.toTable)
+      )
+      .map((rel: any) => {
+        const fromModel = models.find(m => m.sourceTableName === rel.fromTable);
+        const toModel = models.find(m => m.sourceTableName === rel.toTable);
+        const fromColumn = columns.find(c => c.modelId === fromModel.id && c.sourceColumnName === rel.fromColumn);
+        const toColumn = columns.find(c => c.modelId === toModel.id && c.sourceColumnName === rel.toColumn);
+
+        if (!fromModel || !toModel || !fromColumn || !toColumn) {
+          logger.warn(`Could not create relationship ${rel.name}, model or column not found.`);
+          return null;
+        }
+
+        return {
+          fromModelId: fromModel.id,
+          fromColumnId: fromColumn.id,
+          toModelId: toModel.id,
+          toColumnId: toColumn.id,
+          type: RelationType.ONE_TO_MANY, // Default, bisa disesuaikan
+          description: `Foreign key from ${rel.fromTable}.${rel.fromColumn} to ${rel.toTable}.${rel.toColumn}`,
+        };
+      })
+      .filter(Boolean); // Hapus entri null
+      
+    if (relationValues.length > 0) {
+        await this.saveRelations(relationValues);
+        logger.debug(`${relationValues.length} relationships created from JSON schema.`);
+    }
+
+    return { models, columns };
+  }
   private generateReferenceNameFromDisplayName(displayName: string) {
     // replace all syntaxes that [in the first raw of keyboard, {}, [], ', ", ,, . ] with _
     return replaceAllowableSyntax(displayName);

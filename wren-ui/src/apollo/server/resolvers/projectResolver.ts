@@ -36,6 +36,7 @@ import DataSourceSchemaDetector, {
 } from '@server/managers/dataSourceSchemaDetector';
 import { encryptConnectionInfo } from '../dataSource';
 import { TelemetryEvent } from '../telemetry/telemetry';
+import { SimcoreAdaptor } from '../adaptors/simcoreAdaptor';
 
 const logger = getLogger('DataSourceResolver');
 logger.level = 'debug';
@@ -286,8 +287,22 @@ export class ProjectResolver {
 
     // try to connect to the data source
     try {
-      // handle duckdb connection
-      if (type === DataSourceName.DUCKDB) {
+      if (type === DataSourceName.SIMCORE) {
+        // Untuk SIMCORE, kita verifikasi koneksi dengan cara login.
+        logger.debug('SIMCORE detected. Verifying connection via login...');
+        const simcoreAdaptor = new SimcoreAdaptor(
+          connectionInfo as any,
+        );
+        // Coba query sederhana. Metode query di adaptor kita sudah menangani login.
+        // Jika ini gagal, ia akan melempar error dan ditangkap oleh blok catch.
+        await simcoreAdaptor.query('SELECT 1', {
+          dataSource: type,
+          connectionInfo: connectionInfo as any,
+          mdl: { models: [], relationships: [] },
+        });
+        logger.debug('SIMCORE connection verified successfully.');
+      } else if (type === DataSourceName.DUCKDB) {
+        // Logika DUCKDB yang sudah ada
         connectionInfo as DUCKDB_CONNECTION_INFO;
         await this.buildDuckDbEnvironment(ctx, {
           initSql: connectionInfo.initSql,
@@ -295,7 +310,7 @@ export class ProjectResolver {
           configurations: connectionInfo.configurations,
         });
       } else {
-        // handle other data source
+        // Logika untuk semua data source lain yang sudah ada
         await ctx.projectService.getProjectDataSourceTables(project);
         const version =
           await ctx.projectService.getProjectDataSourceVersion(project);
@@ -388,31 +403,46 @@ export class ProjectResolver {
   public async saveTables(
     _root: any,
     arg: {
-      data: { tables: string[] };
+      data: { tables: string[]; schemaJSON?: string }; // Perbarui tipe argumen
     },
     ctx: IContext,
   ) {
     const eventName = TelemetryEvent.CONNECTION_SAVE_TABLES;
-
-    // get current project
     const project = await ctx.projectService.getCurrentProject();
+
     try {
-      // delete existing models and columns
-      const { models, columns } = await this.overwriteModelsAndColumns(
-        arg.data.tables,
-        ctx,
-        project,
-      );
-      // telemetry
+      let models: Model[], columns: ModelColumn[];
+
+      // --- PERUBAHAN LOGIKA UTAMA DI SINI ---
+      if (project.type === DataSourceName.SIMCORE && arg.data.schemaJSON) {
+        // Jika SIMCORE, buat model dari skema JSON yang dikirim
+        const result = await ctx.modelService.createModelsFromSchemaJSON(
+          project.id,
+          arg.data.schemaJSON,
+          arg.data.tables,
+        );
+        models = result.models;
+        columns = result.columns;
+      } else {
+        // Jika bukan SIMCORE, gunakan logika yang sudah ada
+        const result = await this.overwriteModelsAndColumns(
+          arg.data.tables,
+          ctx,
+          project,
+        );
+        models = result.models;
+        columns = result.columns;
+      }
+      // ------------------------------------------
+
       ctx.telemetry.sendEvent(eventName, {
         dataSourceType: project.type,
         tablesCount: models.length,
         columnsCount: columns.length,
       });
 
-      // async deploy to wren-engine and ai service
       this.deploy(ctx);
-      return { models: models, columns };
+      return { models, columns };
     } catch (err: any) {
       ctx.telemetry.sendEvent(
         eventName,
@@ -426,78 +456,111 @@ export class ProjectResolver {
 
   public async autoGenerateRelation(_root: any, _arg: any, ctx: IContext) {
     const project = await ctx.projectService.getCurrentProject();
-
-    // get models and columns
     const models = await ctx.modelRepository.findAllBy({
       projectId: project.id,
     });
     const modelIds = models.map((m) => m.id);
     const columns =
       await ctx.modelColumnRepository.findColumnsByModelIds(modelIds);
-    const constraints =
-      await ctx.projectService.getProjectSuggestedConstraint(project);
 
-    // generate relation
-    const relations = [];
-    for (const constraint of constraints) {
-      const {
-        constraintTable,
-        constraintColumn,
-        constraintedTable,
-        constraintedColumn,
-      } = constraint;
-      // validate tables and columns exists in our models and model columns
-      const fromModel = models.find(
-        (m) => m.sourceTableName === constraintTable,
-      );
-      const toModel = models.find(
-        (m) => m.sourceTableName === constraintedTable,
-      );
-      if (!fromModel || !toModel) {
-        continue;
+    let finalRelations: AnalysisRelationInfo[] = [];
+
+    // --- LOGIKA BARU YANG MENGIKUTI POLA YANG BENAR ---
+    if (project.type === DataSourceName.SIMCORE) {
+      logger.debug('SIMCORE detected. Building relation info from existing data...');
+      // 1. Ambil relasi mentah yang sudah kita simpan dari schema.json
+      const existingRelations = await ctx.relationRepository.findRelationInfoBy({
+        projectId: project.id,
+      });
+
+      // 2. Loop dan "enrich" setiap relasi, sama seperti alur lain
+      finalRelations = existingRelations.map(relation => {
+        const fromModel = models.find(m => m.id === relation.fromModelId);
+        const toModel = models.find(m => m.id === relation.toModelId);
+        const fromColumn = columns.find(c => c.id === relation.fromColumnId);
+        const toColumn = columns.find(c => c.id === relation.toColumnId);
+
+        // Jika ada data yang tidak ditemukan, lewati untuk mencegah error
+        if (!fromModel || !toModel || !fromColumn || !toColumn) {
+          return null;
+        }
+
+        // 3. Bangun objek yang lengkap dan valid sesuai skema GraphQL
+        return {
+          name: relation.name,
+          fromModelId: fromModel.id,
+          fromModelReferenceName: fromModel.referenceName,
+          fromColumnId: fromColumn.id,
+          fromColumnReferenceName: fromColumn.referenceName,
+          toModelId: toModel.id,
+          toModelReferenceName: toModel.referenceName,
+          toColumnId: toColumn.id,
+          toColumnReferenceName: toColumn.referenceName,
+          type: relation.joinType as RelationType, // Ambil dari data dan cast sebagai enum
+        };
+      }).filter(Boolean); // Hapus entri null
+
+    } else {
+      // --- LOGIKA YANG SUDAH ADA UNTUK DATABASE LAIN (TIDAK DIUBAH) ---
+      logger.debug('Non-SIMCORE detected. Generating relations from constraints...');
+      const constraints =
+        await ctx.projectService.getProjectSuggestedConstraint(project);
+
+      const relations = [];
+      for (const constraint of constraints) {
+        const {
+          constraintTable,
+          constraintColumn,
+          constraintedTable,
+          constraintedColumn,
+        } = constraint;
+        const fromModel = models.find(
+          (m) => m.sourceTableName === constraintTable,
+        );
+        const toModel = models.find(
+          (m) => m.sourceTableName === constraintedTable,
+        );
+        if (!fromModel || !toModel) continue;
+
+        const fromColumn = columns.find(
+          (c) =>
+            c.modelId === fromModel.id && c.sourceColumnName === constraintColumn,
+        );
+        const toColumn = columns.find(
+          (c) =>
+            c.modelId === toModel.id && c.sourceColumnName === constraintedColumn,
+        );
+        if (!fromColumn || !toColumn) continue;
+
+        const relation: AnalysisRelationInfo = {
+          name: constraint.constraintName,
+          fromModelId: fromModel.id,
+          fromModelReferenceName: fromModel.referenceName,
+          fromColumnId: fromColumn.id,
+          fromColumnReferenceName: fromColumn.referenceName,
+          toModelId: toModel.id,
+          toModelReferenceName: toModel.referenceName,
+          toColumnId: toColumn.id,
+          toColumnReferenceName: toColumn.referenceName,
+          type: RelationType.ONE_TO_MANY,
+        };
+        relations.push(relation);
       }
-      const fromColumn = columns.find(
-        (c) =>
-          c.modelId === fromModel.id && c.sourceColumnName === constraintColumn,
-      );
-      const toColumn = columns.find(
-        (c) =>
-          c.modelId === toModel.id && c.sourceColumnName === constraintedColumn,
-      );
-      if (!fromColumn || !toColumn) {
-        continue;
-      }
-      // create relation
-      const relation: AnalysisRelationInfo = {
-        // upper case the first letter of the sourceTableName
-        name: constraint.constraintName,
-        fromModelId: fromModel.id,
-        fromModelReferenceName: fromModel.referenceName,
-        fromColumnId: fromColumn.id,
-        fromColumnReferenceName: fromColumn.referenceName,
-        toModelId: toModel.id,
-        toModelReferenceName: toModel.referenceName,
-        toColumnId: toColumn.id,
-        toColumnReferenceName: toColumn.referenceName,
-        // TODO: add join type
-        type: RelationType.ONE_TO_MANY,
-      };
-      relations.push(relation);
+      finalRelations = relations;
     }
-    // group by model
+
+    // Kelompokkan hasil akhir berdasarkan model
     return models.map(({ id, displayName, referenceName }) => ({
       id,
       displayName,
       referenceName,
-      relations: relations.filter(
+      relations: finalRelations.filter(
         (relation) =>
           relation.fromModelId === id &&
-          // exclude self-referential relationship
           relation.toModelId !== relation.fromModelId,
       ),
     }));
   }
-
   public async saveRelations(
     _root: any,
     arg: { data: { relations: RelationData[] } },
