@@ -407,7 +407,7 @@ const dataSource = {
   } as IDataSourceConnectionInfo<SIMCORE_CONNECTION_INFO, unknown>,
 };
 
-function decryptConnectionInfo(
+export function decryptConnectionInfo(
   dataSourceType: DataSourceName,
   connectionInfo: WREN_AI_CONNECTION_INFO,
 ): WREN_AI_CONNECTION_INFO {

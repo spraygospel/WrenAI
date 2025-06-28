@@ -24,7 +24,6 @@ import { DataSourceName } from '@server/types';
 const logger = getLogger('SimcoreAdaptor');
 logger.level = 'debug';
 
-// Helper to transform SIM Core's System.Type to a simplified type
 const transformSimcoreType = (simcoreType: string): string => {
   const lowerType = simcoreType.toLowerCase();
   if (lowerType.includes('int') || lowerType.includes('decimal') || lowerType.includes('double')) {
@@ -38,6 +37,20 @@ const transformSimcoreType = (simcoreType: string): string => {
   }
   return 'string';
 };
+
+// --- TAMBAHKAN FUNGSI HELPER BARU DI SINI ---
+/**
+ * Mengonversi SQL generik yang menggunakan kutip ganda (") menjadi
+ * dialek MySQL yang menggunakan backtick (`).
+ * @param sql - String SQL yang akan dikonversi.
+ * @returns String SQL yang kompatibel dengan MySQL.
+ */
+const _toMySQLDialect = (sql: string): string => {
+  // Regex ini akan mengganti semua kutip ganda yang mengapit kata (identifier)
+  // dengan backtick, sambil mengabaikan kutip ganda di dalam string literal.
+  return sql.replace(/"([^"]+)"/g, '`$1`');
+};
+// ------------------------------------------
 
 export class SimcoreAdaptor implements IIbisAdaptor {
   private _connectionInfo: SIMCORE_CONNECTION_INFO;
@@ -65,7 +78,6 @@ export class SimcoreAdaptor implements IIbisAdaptor {
       }
 
       this._token = token;
-      // Set expiry to 23 hours from now to be safe (token is valid for 24h)
       this._tokenExpiry = Date.now() + 23 * 60 * 60 * 1000;
       logger.debug('Successfully logged in and stored new token.');
     } catch (e) {
@@ -91,12 +103,21 @@ export class SimcoreAdaptor implements IIbisAdaptor {
 
   public async query(sql: string, options: IbisQueryOptions): Promise<IbisQueryResponse> {
     await this._ensureValidToken();
-    logger.debug(`Executing SIM Core query with limit: ${options.limit || DEFAULT_PREVIEW_LIMIT}`);
+    
+    // --- UBAH LOGIKA DI SINI ---
+    const mysqlSql = _toMySQLDialect(sql);
+    logger.debug(`Original SQL: ${sql}`);
+    logger.debug(`Converted MySQL SQL: ${mysqlSql}`);
+    const previewLimit = options.limit || 100;
+    logger.debug(`Executing SIM Core query with limit: ${previewLimit}`);
+    // ---------------------------
 
     try {
       const response: AxiosResponse = await axios.post(
         `${this._connectionInfo.apiUrl}/api/dynamicquery`,
-        { query: sql }, // SIM Core API expects the query in the body
+        // --- GUNAKAN SQL YANG SUDAH DIKONVERSI ---
+        { query: mysqlSql },
+        // -------------------------------------
         {
           headers: {
             Authorization: `Bearer ${this._token}`,
@@ -110,8 +131,6 @@ export class SimcoreAdaptor implements IIbisAdaptor {
         throw new Error(simcoreData.message || 'SIM Core API returned an error.');
       }
 
-      // --- Data Transformation ---
-      // Transform the SIM Core response to the IbisQueryResponse format expected by the app.
       const columns: string[] = simcoreData.columns.map(c => c.columnName);
       const dtypes: Record<string, string> = simcoreData.columns.reduce((acc, c) => {
         acc[c.columnName] = transformSimcoreType(c.columnType);
@@ -119,13 +138,19 @@ export class SimcoreAdaptor implements IIbisAdaptor {
       }, {});
 
       const limit = options.limit || DEFAULT_PREVIEW_LIMIT;
-      const data = simcoreData.table.slice(0, limit);
+      const dataKeys = simcoreData.table.length > 0 ? Object.keys(simcoreData.table[0]) : [];
+
+      const transformedData = simcoreData.table.slice(0, previewLimit).map(rowObject => {
+        return columns.map(pascalCaseColumnName => {
+          const matchingKey = dataKeys.find(key => key.toLowerCase() === pascalCaseColumnName.toLowerCase());
+          return matchingKey ? rowObject[matchingKey] : null;
+        });
+      });
 
       return {
         columns,
-        data,
+        data: transformedData,
         dtypes,
-        // These fields are not applicable to SIM Core but are part of the interface
         correlationId: null,
         processTime: null,
         cacheHit: false,
@@ -143,21 +168,16 @@ export class SimcoreAdaptor implements IIbisAdaptor {
     }
   }
 
-  // --- UNSUPPORTED METHODS ---
-  // These methods are part of the IIbisAdaptor interface but are not supported by the SIM Core API.
-  // We implement them to throw a clear error, preventing accidental use.
-
+  // --- Metode tidak didukung tetap sama ---
   public async getTables(dataSource: DataSourceName, connectionInfo: any): Promise<CompactTable[]> {
     throw new Error('getTables is not supported for SIMCORE data source.');
   }
-
+  // ... (sisa metode tidak didukung biarkan sama)
   public async getConstraints(dataSource: DataSourceName, connectionInfo: any): Promise<RecommendConstraint[]> {
     throw new Error('getConstraints is not supported for SIMCORE data source.');
   }
 
   public async dryRun(query: string, options: IbisQueryOptions): Promise<any> {
-    // We can simulate a successful dryRun by simply returning a resolved promise,
-    // as the primary check (login) is handled by the query method.
     return Promise.resolve({ correlationId: null });
   }
 
@@ -174,7 +194,6 @@ export class SimcoreAdaptor implements IIbisAdaptor {
   }
 
   public async getVersion(dataSource: DataSourceName, connectionInfo: any): Promise<string> {
-    // Can return a static version string as it's not discoverable.
     return Promise.resolve('SIMCORE API v1.0');
   }
 }

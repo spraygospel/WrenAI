@@ -19,6 +19,7 @@ import {
   InstructionRepository,
   ApiHistoryRepository,
   DashboardItemRefreshJobRepository,
+  SIMCORE_CONNECTION_INFO,
 } from '@server/repositories';
 import {
   WrenEngineAdaptor,
@@ -45,6 +46,7 @@ import {
   DashboardCacheBackgroundTracker,
 } from './apollo/server/backgrounds';
 import { SqlPairService } from './apollo/server/services/sqlPairService';
+import { decryptConnectionInfo } from './apollo/server/dataSource';
 import { DataSourceName } from './apollo/server/types'; 
 
 export const serverConfig = getConfig();
@@ -98,10 +100,15 @@ export const initComponents = () => {
     connectionInfo: any,
   ): IIbisAdaptor => {
     if (dataSourceType === DataSourceName.SIMCORE) {
-      // Instance dibuat saat dibutuhkan dengan connectionInfo yang tepat
-      return new SimcoreAdaptor(connectionInfo);
+      // 1. Dekripsi connectionInfo sebelum digunakan.
+      const decryptedConnectionInfo = decryptConnectionInfo(
+        dataSourceType,
+        connectionInfo,
+      );
+      // 2. Buat instance SimcoreAdaptor dengan kredensial yang sudah didekripsi.
+      return new SimcoreAdaptor(decryptedConnectionInfo as SIMCORE_CONNECTION_INFO);
     }
-    // Default untuk semua tipe data source lainnya
+    // Default untuk semua tipe data source lainnya, tidak perlu dekripsi di sini.
     return ibisAdaptor;
   };
 
