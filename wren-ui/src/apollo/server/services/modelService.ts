@@ -531,7 +531,7 @@ export class ModelService implements IModelService {
     await this.deleteAllModelsByProjectId(projectId);
 
     // Buat Model
-    const modelValues = tablesToCreate.map(([tableName, tableData]: [string, any]) => ({
+    const modelValues = tablesToCreate.map(([tableName, _tableData]: [string, any]) => ({
       projectId,
       displayName: tableName,
       referenceName: replaceInvalidReferenceName(tableName),
