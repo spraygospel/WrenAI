@@ -46,9 +46,16 @@ const transformSimcoreType = (simcoreType: string): string => {
  * @returns String SQL yang kompatibel dengan MySQL.
  */
 const _toMySQLDialect = (sql: string): string => {
-  // Regex ini akan mengganti semua kutip ganda yang mengapit kata (identifier)
-  // dengan backtick, sambil mengabaikan kutip ganda di dalam string literal.
-  return sql.replace(/"([^"]+)"/g, '`$1`');
+  // 1. Ganti kutip ganda menjadi backtick
+  let mysqlSql = sql.replace(/"([^"]+)"/g, '`$1`');
+  
+  // 2. Ganti CAST(... AS TIMESTAMP WITH TIME ZONE) menjadi CAST(... AS DATETIME)
+  // Regex ini akan mencari pola CAST(...) dan mengganti isinya.
+  mysqlSql = mysqlSql.replace(/CAST\(([^)]+)\s+AS\s+TIMESTAMP\s+WITH\s+TIME\s+ZONE\)/gi, 'CAST($1 AS DATETIME)');
+  // 3. Ganti ARRAY_JOIN(ARRAY_AGG(...), separator) menjadi GROUP_CONCAT(..., SEPARATOR separator)
+  // Regex ini mencari pola ARRAY_JOIN(ARRAY_AGG(column), separator)
+  mysqlSql = mysqlSql.replace(/ARRAY_JOIN\(ARRAY_AGG\(([^)]+)\),\s*'([^']*)'\)/gi, "GROUP_CONCAT($1 SEPARATOR '$2')");
+  return mysqlSql;
 };
 // ------------------------------------------
 
@@ -186,7 +193,8 @@ export class SimcoreAdaptor implements IIbisAdaptor {
   }
 
   public async getNativeSql(options: any): Promise<string> {
-    throw new Error('getNativeSql is not supported for SIMCORE data source.');
+    logger.debug(`Generating native SQL for SIMCORE.`);
+    return Promise.resolve(_toMySQLDialect(options.sql));
   }
 
   public async modelSubstitute(sql: DialectSQL, options: any): Promise<WrenSQL> {

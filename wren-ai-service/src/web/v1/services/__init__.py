@@ -28,6 +28,7 @@ class Configuration(BaseModel):
 
     language: Optional[str] = "English"
     timezone: Optional[Timezone] = Timezone()
+    dialect: Optional[str] = ""
 
 
 class SSEEvent(BaseModel):

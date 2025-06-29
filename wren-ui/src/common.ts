@@ -226,6 +226,7 @@ export const initComponents = () => {
     wrenEngineAdaptor,
     wrenAIAdaptor,
     ibisAdaptor,
+    adaptorFactory, 
 
     // services
     metadataService,

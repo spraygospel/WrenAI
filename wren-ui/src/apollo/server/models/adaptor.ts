@@ -62,6 +62,7 @@ export interface AskHistory {
 export interface ProjectConfigurations {
   language?: string;
   timezone?: { name: string };
+  dialect?: string;
 }
 
 export interface AskInput {

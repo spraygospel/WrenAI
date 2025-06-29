@@ -50,10 +50,14 @@ def remove_limit_statement(sql: str) -> str:
     return modified_sql
 
 
-def add_quotes(sql: str) -> Tuple[str, str]:
+def add_quotes(sql: str, dialect: str = "") -> Tuple[str, str]:
     try:
+        # Tulis ulang SQL ke dialek yang ditentukan.
+        # Jika dialek kosong, ia akan default ke dialek generik (trino).
+        # Ini memastikan perilaku lama tidak berubah untuk data source lain.
+        write_dialect = dialect if dialect else "trino"
         quoted_sql = sqlglot.transpile(
-            sql, read="trino", identify=True, error_level=sqlglot.ErrorLevel.RAISE
+            sql, read="trino", write=write_dialect, identify=True, error_level=sqlglot.ErrorLevel.RAISE
         )[0]
     except Exception as e:
         logger.exception(f"Error in sqlglot.transpile to {sql}: {e}")

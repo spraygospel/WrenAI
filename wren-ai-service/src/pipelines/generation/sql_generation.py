@@ -16,7 +16,7 @@ from src.pipelines.generation.utils.sql import (
     calculated_field_instructions,
     construct_instructions,
     metric_instructions,
-    sql_generation_system_prompt,
+    get_sql_generation_system_prompt, 
 )
 from src.pipelines.retrieval.sql_functions import SqlFunction
 from src.utils import trace_cost
@@ -141,11 +141,7 @@ class SQLGeneration(BasicPipeline):
         **kwargs,
     ):
         self._components = {
-            "generator": llm_provider.get_generator(
-                system_prompt=sql_generation_system_prompt,
-                generation_kwargs=SQL_GENERATION_MODEL_KWARGS,
-            ),
-            "generator_name": llm_provider.get_model(),
+            "llm_provider": llm_provider,
             "prompt_builder": PromptBuilder(
                 template=sql_generation_user_prompt_template
             ),
@@ -175,6 +171,18 @@ class SQLGeneration(BasicPipeline):
         sql_functions: list[SqlFunction] | None = None,
     ):
         logger.info("SQL Generation pipeline is running...")
+        # Dapatkan dialek dari konfigurasi yang diterima saat runtime
+        dialect = configuration.dialect if configuration else ""
+        
+        # Buat system prompt yang benar saat runtime
+        system_prompt = get_sql_generation_system_prompt(dialect)
+        
+        # Buat generator LLM secara dinamis dengan prompt yang benar
+        generator = self._components["llm_provider"].get_generator(
+            system_prompt=system_prompt,
+            generation_kwargs=SQL_GENERATION_MODEL_KWARGS,
+        )
+        
         return await self._pipe.execute(
             ["post_process"],
             inputs={
@@ -188,8 +196,12 @@ class SQLGeneration(BasicPipeline):
                 "has_calculated_field": has_calculated_field,
                 "has_metric": has_metric,
                 "sql_functions": sql_functions,
-                **self._components,
-                **self._configs,
+                "dialect": dialect,
+                "generator": generator, # Teruskan generator yang baru dibuat
+                "generator_name": self._components["llm_provider"].get_model(),
+                "prompt_builder": self._components["prompt_builder"],
+                "post_processor": self._components["post_processor"],
+                "engine_timeout": self._configs["engine_timeout"],
             },
         )
 

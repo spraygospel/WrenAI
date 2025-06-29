@@ -533,6 +533,7 @@ export class AskingService implements IAskingService {
 
     const project = await this.projectService.getCurrentProject();
     const { manifest } = await this.mdlService.makeCurrentModelMDL();
+    const dialect = manifest.dataSource; 
 
     const threadResponses = await this.threadResponseRepository.findAllBy({
       threadId,
@@ -593,7 +594,8 @@ export class AskingService implements IAskingService {
   ): Promise<Task> {
     const { threadId, language } = payload;
     const deployId = await this.getDeployId();
-
+    const { manifest } = await this.mdlService.makeCurrentModelMDL();
+    const dialect = manifest.dataSource;
     // if it's a follow-up question, then the input will have a threadId
     // then use the threadId to get the sql and get the steps of last thread response
     // construct it into AskHistory and pass to ask
@@ -604,7 +606,7 @@ export class AskingService implements IAskingService {
       query: input.question,
       histories,
       deployId,
-      configurations: { language },
+      configurations: { language, dialect },
       rerunFromCancelled,
       previousTaskId,
       threadResponseId,

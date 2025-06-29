@@ -980,12 +980,25 @@ export class ModelResolver {
         modelingOnly: false,
       });
     } else {
-      logger.info(`Getting native sql from ibis server`);
-      nativeSql = await ctx.ibisServerAdaptor.getNativeSql({
-        dataSource: project.type,
-        sql: response.sql,
-        mdl: manifest,
-      });
+      // --- PERUBAHAN LOGIKA DI SINI ---
+      logger.info(`Using adaptor factory to get native sql for ${project.type}`);
+      const adaptor = ctx.adaptorFactory(project.type, project.connectionInfo);
+      
+      if (project.type === DataSourceName.SIMCORE) {
+        nativeSql = await adaptor.getNativeSql({
+          dataSource: project.type,
+          sql: response.sql,
+          mdl: manifest,
+        });
+      } else {
+        // Untuk adaptor lain (Ibis)
+        nativeSql = await adaptor.getNativeSql({
+          dataSource: project.type,
+          sql: response.sql,
+          mdl: manifest,
+        });
+      }
+      // -------------------------------
     }
     const language = project.type === DataSourceName.MSSQL ? 'tsql' : undefined;
     return format(nativeSql, { language });

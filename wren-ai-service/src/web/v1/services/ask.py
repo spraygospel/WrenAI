@@ -199,6 +199,10 @@ class AskService:
         table_names = []
         error_message = None
         invalid_sql = None
+        dialect = ""
+        if ask_request.configurations and ask_request.configurations.dialect:
+            dialect = ask_request.configurations.dialect
+            logger.info(f"Received dialect from request: {dialect}")
         allow_sql_generation_reasoning = (
             self._allow_sql_generation_reasoning
             and not ask_request.ignore_sql_generation_reasoning
@@ -466,13 +470,14 @@ class AskService:
                     is_followup=True if histories else False,
                 )
 
-                if allow_sql_functions_retrieval:
+                if allow_sql_functions_retrieval and dialect != "mysql":
                     sql_functions = await self._pipelines[
                         "sql_functions_retrieval"
                     ].run(
                         project_id=ask_request.project_id,
                     )
                 else:
+                    logger.info(f"Skipping sql_functions_retrieval for dialect: {dialect}")
                     sql_functions = []
 
                 has_calculated_field = _retrieval_result.get(

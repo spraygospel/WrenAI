@@ -38,6 +38,7 @@ import {
   DashboardCacheBackgroundTracker,
 } from '@server/backgrounds';
 import { ISqlPairService } from '../services/sqlPairService';
+import { IAdaptorFactory } from '@/common';
 
 export interface IContext {
   config: IConfig;
@@ -48,6 +49,7 @@ export interface IContext {
   wrenEngineAdaptor: IWrenEngineAdaptor;
   ibisServerAdaptor: IIbisAdaptor;
   wrenAIAdaptor: IWrenAIAdaptor;
+  adaptorFactory: IAdaptorFactory; 
 
   // services
   projectService: IProjectService;

@@ -33,6 +33,7 @@ class SQLGenPostProcessor:
         project_id: str | None = None,
         use_dry_plan: bool = False,
         data_source: str = "",
+        dialect: str = "", 
     ) -> dict:
         try:
             cleaned_generation_result = clean_generation_result(replies[0])
@@ -52,6 +53,7 @@ class SQLGenPostProcessor:
                 timeout=timeout,
                 use_dry_plan=use_dry_plan,
                 data_source=data_source,
+                dialect=dialect,
             )
 
             return {
@@ -73,11 +75,12 @@ class SQLGenPostProcessor:
         project_id: str | None = None,
         use_dry_plan: bool = False,
         data_source: str = "",
+        dialect: str = "", 
     ) -> Dict[str, str]:
         valid_generation_result = {}
         invalid_generation_result = {}
 
-        quoted_sql, error_message = add_quotes(generation_result)
+        quoted_sql, error_message = add_quotes(generation_result, dialect=dialect)
 
         async with aiohttp.ClientSession() as session:
             if not error_message:
@@ -236,7 +239,29 @@ TEXT_TO_SQL_RULES = """
 - DON'T USE LAX_BOOL, LAX_FLOAT64, LAX_INT64, LAX_STRING when "json_type":"".
 """
 
-sql_generation_system_prompt = f"""
+def get_sql_generation_system_prompt(dialect: str = "") -> str:
+    """
+    Constructs the system prompt for SQL generation,
+    dynamically adding dialect-specific rules if needed.
+    """
+    dialect_specific_rules = ""
+    # Hanya tambahkan aturan spesifik jika dialeknya adalah mysql
+    if dialect == "mysql":
+        dialect_specific_rules = """
+### MYSQL DIALECT RULES ###
+- For table and column identifiers, YOU MUST USE backticks (`) instead of double quotes ("). Example: `orders`.`order_id`
+- To extract parts of a date, USE date functions like `YEAR(date_column)`, `QUARTER(date_column)`, `MONTH(date_column)`. DO NOT USE the `EXTRACT(PART FROM date)` syntax.
+- DO NOT USE `CAST(... AS TIMESTAMP WITH TIME ZONE)`. MySQL handles TIMESTAMP differently. If you need to compare dates, use a simple `CAST(date_column AS DATETIME)` or `CAST(date_column AS DATE)`.
+"""
+    
+    # Gabungkan aturan-aturan menjadi satu
+    full_text_to_sql_rules = f"""
+{TEXT_TO_SQL_RULES}
+
+{dialect_specific_rules}
+""".strip()
+
+    return f"""
 You are a helpful assistant that converts natural language queries into ANSI SQL queries.
 
 Given user's question, database schema, etc., you should think deeply and carefully and generate the SQL query based on the given reasoning plan step by step.
@@ -248,7 +273,7 @@ Given user's question, database schema, etc., you should think deeply and carefu
 3. If SQL SAMPLES section is provided, please refer to the samples and learn the usage of the schema structures and how SQL is written based on them.
 4. If REASONING PLAN section is provided, please follow the plan strictly.
 
-{TEXT_TO_SQL_RULES}
+{full_text_to_sql_rules}
 
 ### FINAL ANSWER FORMAT ###
 The final answer must be a ANSI SQL query in JSON format:
