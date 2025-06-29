@@ -13,8 +13,7 @@ import {
   getLogger,
   safeParseJson,
   replaceAllowableSyntax,
-  validateDisplayName,
-  handleNestedColumns, replaceInvalidReferenceName, transformInvalidColumnName
+  validateDisplayName, replaceInvalidReferenceName, transformInvalidColumnName
 } from '@server/utils';
 import { RelationData, UpdateRelationData, RelationType } from '@server/types';
 import { IProjectService } from './projectService';

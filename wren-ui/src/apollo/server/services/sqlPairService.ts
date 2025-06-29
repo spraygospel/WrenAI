@@ -6,7 +6,6 @@ import { getLogger } from '@server/utils';
 import { chunk } from 'lodash';
 import * as Errors from '@server/utils/error';
 import { Project } from '../repositories';
-import { IIbisAdaptor } from '../adaptors/ibisAdaptor';
 import {
   DialectSQL,
   WrenSQL,

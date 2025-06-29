@@ -16,7 +16,6 @@ import {
 } from '@server/models/adaptor';
 import {
   CompactTable,
-  DEFAULT_PREVIEW_LIMIT,
   RecommendConstraint,
 } from '@server/services';
 import { DataSourceName } from '@server/types';
@@ -144,7 +143,6 @@ export class SimcoreAdaptor implements IIbisAdaptor {
         return acc;
       }, {});
 
-      const limit = options.limit || DEFAULT_PREVIEW_LIMIT;
       const dataKeys = simcoreData.table.length > 0 ? Object.keys(simcoreData.table[0]) : [];
 
       const transformedData = simcoreData.table.slice(0, previewLimit).map(rowObject => {
@@ -176,19 +174,19 @@ export class SimcoreAdaptor implements IIbisAdaptor {
   }
 
   // --- Metode tidak didukung tetap sama ---
-  public async getTables(dataSource: DataSourceName, connectionInfo: any): Promise<CompactTable[]> {
+  public async getTables(_dataSource: DataSourceName, _connectionInfo: any): Promise<CompactTable[]> {
     throw new Error('getTables is not supported for SIMCORE data source.');
   }
   // ... (sisa metode tidak didukung biarkan sama)
-  public async getConstraints(dataSource: DataSourceName, connectionInfo: any): Promise<RecommendConstraint[]> {
+  public async getConstraints(_dataSource: DataSourceName, _connectionInfo: any): Promise<RecommendConstraint[]> {
     throw new Error('getConstraints is not supported for SIMCORE data source.');
   }
 
-  public async dryRun(query: string, options: IbisQueryOptions): Promise<any> {
+  public async dryRun(_query: string, _options: IbisQueryOptions): Promise<any> {
     return Promise.resolve({ correlationId: null });
   }
 
-  public async validate(dataSource: DataSourceName, rule: ValidationRules, connectionInfo: any, mdl: Manifest, parameters: Record<string, any>): Promise<any> {
+  public async validate(_dataSource: DataSourceName, _rule: ValidationRules, _connectionInfo: any, _mdl: Manifest, _parameters: Record<string, any>): Promise<any> {
     throw new Error('validate is not supported for SIMCORE data source.');
   }
 
@@ -197,11 +195,11 @@ export class SimcoreAdaptor implements IIbisAdaptor {
     return Promise.resolve(_toMySQLDialect(options.sql));
   }
 
-  public async modelSubstitute(sql: DialectSQL, options: any): Promise<WrenSQL> {
+  public async modelSubstitute(_sql: DialectSQL, _options: any): Promise<WrenSQL> {
     throw new Error('modelSubstitute is not supported for SIMCORE data source.');
   }
 
-  public async getVersion(dataSource: DataSourceName, connectionInfo: any): Promise<string> {
+  public async getVersion(_dataSource: DataSourceName, _connectionInfo: any): Promise<string> {
     return Promise.resolve('SIMCORE API v1.0');
   }
 }

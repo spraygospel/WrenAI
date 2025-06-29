@@ -4,7 +4,6 @@
     For PostgreSQL and BigQuery, we will use the Ibis server API.
  */
 
-import { IIbisAdaptor } from '../adaptors/ibisAdaptor';
 import { IAdaptorFactory } from '@/common'; 
 import { IWrenEngineAdaptor } from '../adaptors/wrenEngineAdaptor';
 import { Project } from '../repositories';

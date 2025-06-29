@@ -4,7 +4,6 @@ import { IWrenEngineAdaptor } from '../adaptors/wrenEngineAdaptor';
 import { IAdaptorFactory } from '@/common';
 import {
   SupportedDataSource,
-  IIbisAdaptor,
   IbisQueryResponse,
   ValidationRules,
   IbisResponse,

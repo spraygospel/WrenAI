@@ -533,7 +533,6 @@ export class AskingService implements IAskingService {
 
     const project = await this.projectService.getCurrentProject();
     const { manifest } = await this.mdlService.makeCurrentModelMDL();
-    const dialect = manifest.dataSource; 
 
     const threadResponses = await this.threadResponseRepository.findAllBy({
       threadId,
